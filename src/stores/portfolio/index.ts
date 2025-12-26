@@ -31,7 +31,7 @@ export const usePortfolioStore = defineStore('portfolio', {
       this.loading = isLoading
     },
 
-    setError(message: PortfolioState['error']) {
+    setError(message: string | null) {
       this.error = message
     },
   },
