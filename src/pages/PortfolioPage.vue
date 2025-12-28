@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NInputNumber, NButton, NTable } from 'naive-ui'
+import {
+  NCard,
+  NForm,
+  NFormItem,
+  NInput,
+  NInputNumber,
+  NButton,
+  NTable,
+  type FormInst,
+  type FormRules,
+} from 'naive-ui'
 
 import { usePortfolioStore } from '@/stores/portfolio'
 
@@ -9,14 +19,36 @@ const portfolioStore = usePortfolioStore()
 const symbol = ref<string>('')
 const amount = ref<number | null>(null)
 
-function addCoin() {
-  if (symbol.value && amount.value !== null) {
-    portfolioStore.addCoin({ symbol: symbol.value.toLocaleUpperCase(), amount: amount.value })
+const formRef = ref<FormInst | null>(null)
+const formModel = ref<{ symbol: string; amount: number | null }>({
+  symbol: '',
+  amount: null,
+})
+const rules: FormRules = {
+  symbol: [{ required: true, message: 'Symbol is required', trigger: 'blur' }],
+  amount: [
+    { required: true, message: 'Amount is required', trigger: 'blur' },
+    {
+      type: 'number',
+      min: 0,
+      message: 'Amount must be greater than or equal to 0',
+      trigger: 'blur',
+    },
+  ],
+}
 
-    // reset form
-    symbol.value = ''
-    amount.value = null
-  }
+function addCoin() {
+  formRef.value?.validate((errors) => {
+    if (!errors) {
+      portfolioStore.addCoin({
+        symbol: formModel.value.symbol.toUpperCase(),
+        amount: formModel.value.amount!,
+      })
+      // reset form
+      symbol.value = ''
+      amount.value = null
+    }
+  })
 }
 
 function removeCoin(symbol: string) {
@@ -27,14 +59,14 @@ function removeCoin(symbol: string) {
 <template>
   <n-card title="Crypto Portfolio" class="portfolio-card">
     <!-- Add Coin Form -->
-    <n-form @submit.prevent="addCoin">
-      <n-form-item label="Symbol">
-        <n-input v-model:value="symbol" placeholder="e.g. BTC" />
+    <n-form ref="formRef" :model="formModel" :rules="rules" @submit.prevent="addCoin">
+      <n-form-item label="Symbol" path="symbol">
+        <n-input v-model:value="formModel.symbol" placeholder="e.g. BTC" />
       </n-form-item>
-      <n-form-item label="Amount">
-        <n-input-number v-model:value="amount" placeholder="e.g. 0.5" :min="0" />
+      <n-form-item label="Amount" path="amount">
+        <n-input-number v-model:value="formModel.amount" placeholder="e.g. 0.5" :min="0" />
       </n-form-item>
-      <n-button type="primary" block @click="addCoin"> Add Coin</n-button>
+      <n-button type="primary" block attr-type="submit">Add Coin</n-button>
     </n-form>
 
     <!-- Portfolio Table -->
